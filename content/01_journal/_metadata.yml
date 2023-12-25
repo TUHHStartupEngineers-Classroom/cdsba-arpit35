@@ -1,10 +1,10 @@
-author: "Oliver Mork"
+author: "Arpit Kumar Pandey"
 format:
   html:
     toc: true
     toc-depth: 2
     toc-title: Contents
-    number-sections: true
+    number-sections: False
     number-depth: 2
     df-print: paged
     # code-overflow: scroll

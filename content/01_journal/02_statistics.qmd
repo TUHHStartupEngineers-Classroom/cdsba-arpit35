@@ -2,6 +2,134 @@
 title: "Statistical Concepts"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+> Load the data variable:
+
+```{r}
+random_vars <- readRDS("Causal_Data_Science_Data/random_vars.rds")
+random_vars
+```
+
+# Task 1
+
+------------------------------------------------------------------------
+
+For each variable: age and income, computing the following values:
+
+> Expected Value
+
+* Age
+
+```{r}
+expected_value_age <- mean(random_vars$age)
+paste("Expected Value =", expected_value_age)
+```
+
+* Income
+
+```{r}
+expected_value_income <- mean(random_vars$income)
+paste("Expected Value =", expected_value_income)
+```
+
+
+> Variance
+
+* Age
+
+```{r}
+variance_age <- var(random_vars$age)
+paste("Variance Value =", variance_age)
+```
+
+* Income
+
+```{r}
+variance_income <- var(random_vars$income)
+paste("Variance Value =", variance_income)
+```
+
+>Standard Deviation
+
+* Age
+
+```{r}
+standard_deviation_age <- sd(random_vars$age)
+paste("Standard Deviation Value =", standard_deviation_age)
+```
+
+* Income
+
+```{r}
+standard_deviation_income <- sd(random_vars$income)
+paste("Standard Deviation Value =", standard_deviation_income)
+```
+
+# Task 2
+
+------------------------------------------------------------------------
+
+Compare the standard deviations of age and income directly is not a good idea. This is because age and income are measured in different units, so comparing their standard deviations may not give us useful information. Standard deviations show how spread out the values are within each group (age or income), but they don't allow for a straightforward comparison between the two groups.
+
+
+# Task 3
+
+------------------------------------------------------------------------
+
+> The connection between two things using covariance and correlation:
+
+* Covariance
+
+```{r}
+covariance <- cov(random_vars$age, random_vars$income)
+paste("Covariance =", covariance)
+```
+
+* Correlation
+
+```{r}
+correlation <- cor(random_vars$age, random_vars$income)
+paste("Correlation =", correlation)
+```
+
+# Task 4
+
+------------------------------------------------------------------------
+
+> Covariance:
+
+* Covariance indicates the extent to which two factors vary together, and this variation can be either positive, negative, or zero. The measurement scale of covariance is determined by multiplying the units of the two variables being studied. However, a drawback of covariance is its lack of standardization in scale, making it challenging to compare the strength of relationships between different pairs of variables.
+
+> Correlation:
+
+* On the other hand, correlation provides a standardized way of measuring the relationship between things, assigning a value between -1 and 1. A correlation of 1 indicates a flawless positive connection, -1 signifies a complete negative relationship, and 0 suggests no linear relationship. The standardized scale of correlation simplifies comparison and comprehension across various pairs of things. Due to its standardized scale, correlation is more straightforward to grasp compared to covariance, allowing for easy comparison of the strength and direction of relationships between different pairs of things.
+
+> In summary:
+
+* In general, correlation is more straightforward to comprehend and compare than covariance. This is because correlation provides a standardized measurement that falls within the range of -1 to 1. This standardized scale simplifies the understanding of the strength and direction of the relationship between two things. If your goal is to evaluate the connection between two variables without encountering difficulties related to scale, correlation is typically a preferable option over covariance.
+
+# Task 5
+
+------------------------------------------------------------------------
+
+> Compute the conditional expected values for the following:
+
+* $E[income|age<=18]$:  
+
+```{r}
+expected_value_teens <- mean(random_vars$income[random_vars$age <= 18])
+paste("E[income|age <= 18] =", expected_value_teens)
+```
+
+* $E[income|age\in[18,65)]$
+
+```{r}
+expected_value_adults <- mean(random_vars$income[random_vars$age >= 18 & random_vars$age < 65])
+paste("E[income|age ∈ [18, 65]] =", expected_value_adults)
+```
+
+* $E[income|age>=65]$  
+
+```{r}
+expected_value_seniors <- mean(random_vars$income[random_vars$age >= 65])
+paste("E[income|age >= 65] =", expected_value_seniors)
+```

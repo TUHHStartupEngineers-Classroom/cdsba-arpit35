@@ -2,6 +2,94 @@
 title: "Regression and Statistical Inference"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Task 1
+
+------------------------------------------------------------------------
+
+> Loading the data set
+
+```{r}
+df <- readRDS("Causal_Data_Science_Data/car_prices.rds")
+```
+> Checking the dimensions of the dataset
+
+```{r}
+dimensions <- dim(df)
+paste("Dimensions of the dataset =", dimensions)
+```
+
+# Task 2
+
+------------------------------------------------------------------------
+
+```{r}
+head(df)
+
+# Show table
+df
+
+# Get glimpse of data
+glimpse(df)
+
+summary(df, digits = 3)
+
+# Select only numeric columns
+df_numeric <- df[sapply(df, is.numeric)]
+
+# Calculate correlation matrix
+cor(df_numeric)
+```
+
+> To view the data type in the DataFrame.
+
+```{r}
+str(df)
+```
+* We have "chr" and "num" as data types in our dataset.
+
+> Numbers and strings are different data types and they are treated differently.
+
+* Numbers: These are numerical values that can be integers or doubles (for decimal numbers). You can perform arithmetic operations on numbers. For example, you can define a number as num <- 10 or num <- 10.5.
+
+* Strings (Character): These are sequences of characters. Strings are used to store text data. You can perform operations like concatenation on strings, but you cannot perform arithmetic operations. You can define a string as str <- "Hello, World!"
+
+# Task 3
+
+------------------------------------------------------------------------
+
+```{r}
+lm_model <- lm(price ~ ., data = df)
+
+summary(lm_model)
+```
+
+The more '*' there are, the more important the factors are for the car's price. Looking at the table, we can say these things really matter when it comes to deciding how much the car costs.
+
+
+# Task 4
+
+------------------------------------------------------------------------
+
+I would like to select **peakrpm** as a Regressor.
+
+* **Data Type**: As observed in the linear regression summary, the **peakrpm** variable is of numeric type.
+
+* **Impact on Price**: The coefficient for **peakrpm** is 2.526. This signifies that for every one-unit increase in size, the expected price increase is 2.526 units, while holding other variables constant.
+
+* **Statistical Significance**: The p-value is remarkably low at 0.000108, suggesting high statistical significance. This implies that the influence of **peakrpm** on the **Price** is substantial.
+
+# Task 5
+
+------------------------------------------------------------------------
+
+```{r}
+library(dplyr)
+
+df <- mutate(df, seat_heating = TRUE)
+
+model <- lm(price ~ . + seat_heating, data = df)
+
+summary(model)
+```
+
+Since `seat_heating` is a binary variable with the same value for all observations, it will not have any predictive power in the model. The coefficient for `seat_heating` will be `NA`, and the t-value and p-value will also be `NA`. This is because a variable with a single value does not provide any information that can be used to predict the dependent variable.

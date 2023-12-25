@@ -2,6 +2,35 @@
 title: "Causality"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Task 1
+
+------------------------------------------------------------------------
+
+```{r}
+library(tidyverse)
+# number of observations
+n <- 100
+
+# Create tibble
+lm_dat <- tibble(
+  # draw from normal distribution
+  cooking_time = rnorm(n, mean = 4, sd = 1),
+  # food_price depends on cooking_time and noise from normal distribution
+  food_price= 0.3*cooking_time + rnorm(n, 0, 0.1)
+)
+```
+
+```{r}
+lm_dat
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(lm_dat, aes(x = cooking_time, y = food_price)) +
+  geom_point() +
+  labs(title = "Cooking Time vs. Food Price",
+       x = "The total time taken to cook the food",
+       y = "The price of the food")
+
+```
