@@ -2,6 +2,67 @@
 title: "Randomized Controlled Trials"
 ---
 
+------------------------------------------------------------------------
+
+> Loading the data frame
+
+```{r}
+df  <- readRDS("Causal_Data_Science_Data/abtest_online.rds")
+df
+```
+
+# Checking whether the covariates are balanced across the groups
+
+```{r}
+library(ggplot2)
+
+compare_purchase_amount <- 
+  ggplot(df, 
+         aes(x = chatbot, 
+             y = purchase_amount, 
+             color = as.factor(chatbot))) +
+  stat_summary(geom = "errorbar", 
+               width = .5,
+               fun.data = "mean_se", 
+               fun.args = list(mult=1.96),
+               show.legend = F) +
+  labs(x = NULL, y = "purchase_amount", title = "Difference in purchase amount")
+  compare_purchase_amount
+```
+
 ::: callout-note
-You can delete everything in here and start fresh.
+The two plots above show whether the different characteristics are balanced between the two groups.
+:::
+
+# Running a regression to find the effect of chatbot on sales.
+
+```{r}
+lm_sales_ate <- lm(purchase_amount ~ chatbot, data = df)
+summary(lm_sales_ate)
+```
+
+::: callout-note
+The coefficient of the chatbot is -7.0756, which means the presence of the chatbot has a negative influence on sales.
+:::
+
+# Finding subgroup-specific effects by including an interaction
+
+```{r}
+lm_cate4 <- lm(purchase_amount ~ chatbot + I(chatbot^2) * mobile_device + chatbot * previous_visit, data = df)
+summary(lm_cate4)
+```
+
+::: callout-note
+The above result gives the best R-squared value from the interaction I had.
+:::
+
+# Using the outcome variable purchase and runing a logistic regression.
+
+```{r}
+lm_model_binary <- glm(purchase ~ chatbot * mobile_device + chatbot * previous_visit, family = binomial(link = 'logit'), data = df)
+summary(lm_model_binary)
+```
+
+::: callout-note
+logistic regression is tailored for binary or categorical outcomes, and its interpretation revolves around odds ratios and probabilities.
 :::

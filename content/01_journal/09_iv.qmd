@@ -2,6 +2,89 @@
 title: "Instrumental Variables"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Task - 1
+
+------------------------------------------------------------------------
+
+```{r}
+library(tidyverse)
+library(dagitty)
+library(ggdag)
+library(ggplot2)
+
+
+iv_expl <- dagify(
+  Y ~ D,
+  Y ~ U,
+  D ~ U,
+  D ~ Z,
+  exposure = "D",
+  latent = "U",
+  outcome = "Y",
+  coords = list(x = c(U = 1, D = 0, Y = 2, Z = -1),
+                y = c(U = 1, D = 0, Y = 0, Z = 0)),
+  labels = c("D" = "Pop-up Feature", 
+             "Y" = "App Usage", 
+             "U" = "Unobserved Factor",
+             "Z" = "Encouragement")
+)
+ggdag(iv_expl, text = T) +
+  guides(color = "none") +
+  theme_minimal() + 
+  geom_dag_point() +
+  geom_dag_text() +
+  geom_dag_edges() +
+  geom_dag_label_repel(aes(label = label))
+```
+
+# Task - 2
+
+------------------------------------------------------------------------
+
+```{r}
+df <- readRDS("Causal_Data_Science_Data/rand_enc.rds")
+df
+```
+
+```{r}
+model_biased <- lm(time_spent ~ used_ftr, data = df)
+summary(model_biased)
+```
+
+# Task - 3
+
+------------------------------------------------------------------------
+
+```{r}
+cor(df) %>% round(2)
+```
+> Looking at your correlation matrix, I observe the following correlations:
+
+* The correlation between the randomly selected customer (rand_enc) and features used (used_ftr) is 0.20, suggesting a weak positive relationship. The correlation between rand_enc and time_spent is 0.13, indicating a weak positive relationship. The correlation between used_ftr and time_spent is 0.71, suggesting a moderate positive relationship.
+
+> Arguments for Instrumental Variable Estimation:
+
+* Correlation Weakness: The correlations between the randomly selected customer and the other variables are relatively weak, indicating potential endogeneity issues. In such cases, instrumental variable estimation can help mitigate bias.
+
+* Omitted Variable Bias: If there are unobserved factors affecting both the features used and time spent, instrumental variable estimation might be useful in addressing omitted variable bias.
+
+> Considerations Against Instrumental Variable Estimation:
+
+* Validity of the Instrument: For instrumental variable estimation to be valid, the chosen instrument must be relevant and not directly correlated with the outcome variable (time_spent) except through its correlation with the features used.
+
+* Endogeneity Severity: The strength of the endogeneity issue is crucial. If the endogeneity is not substantial, other techniques like controlling for covariates may be sufficient.
+
+
+
+# Task - 4
+
+------------------------------------------------------------------------
+
+```{r}
+library(estimatr)
+
+model_iv <- iv_robust(time_spent ~ used_ftr | rand_enc, data = df)
+summary(model_iv)
+```
+
+* The initial estimate is 10.82, but the Instrumental Variable (IV) estimate is slightly lower at 9.73. The initial estimate, also called the naive estimate, tends to be higher because it doesn't consider hidden factors linked to both feature usage and time spent on the app (referred to as encouragement). The IV estimate addresses this by considering these hidden factors, leading to a more accurate, slightly lower estimate. The naive estimate not only reflects the impact of feature usage on app time but also includes the influence of encouragement, causing it to be too high.

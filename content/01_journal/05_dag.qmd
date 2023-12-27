@@ -2,6 +2,94 @@
 title: "Directed Acyclic Graphs"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+# Parking Spot - DAG
+
+------------------------------------------------------------------------
+
+```{r}
+library(tidyverse)
+library(dagitty)
+library(ggdag)
+
+dag <- 'dag {
+bb="0,0,1,1"
+Parking [exposure,pos="0.1,0.5"]
+Sales [outcome,pos="0.5,0.5"]
+Location [pos="0.3,1"]
+Parking -> Sales
+Location -> Parking
+Location -> Sales
+}
+'
+ggdag_status(dag) + theme_dag()
+```
+
+# Data analysis
+
+------------------------------------------------------------------------
+
+> Loading the data frame
+
+```{r}
+df <- readRDS("Causal_Data_Science_Data/customer_sat.rds")
+
+head(df)
+
+# Show table
+df
+
+# Get glimpse of data
+glimpse(df)
+
+summary(df, digits = 3)
+
+# Select only numeric columns
+df_numeric <- df[sapply(df, is.numeric)]
+
+# Calculate correlation matrix
+cor(df_numeric)
+```
+
+## 1. Regress satisfaction on follow_ups
+
+```{r}
+lm_model <- lm(satisfaction ~ follow_ups, data = df)
+
+summary(lm_model)
+```
+
+## 2. Regress satisfaction on follow_ups and account for subscription
+
+```{r}
+lm_model_subscription <- lm(satisfaction ~ ., data = df)
+
+summary(lm_model_subscription)
+```
+
+# Compare the coefficients and find a possible explanation.
+
+* In the model **without a subscription**, the coefficient is **-3.3093**, indicating that without a subscription, follow-ups decrease customer satisfaction. Conversely, in the model **with a subscription**, the coefficient is **2.1944**, suggesting that with a subscription, follow-ups increase customer satisfaction. The coefficients for **Premium** and **Premium+** are +44.7222 and +18.0722, respectively, signifying that being on these subscription levels is associated with substantial increases in satisfaction compared to the base category. I believe customers find it intrusive when they are followed up without any subscription, potentially due to having fewer features. On the other hand, premium and elite customers seem to perceive the follow-ups more positively. This impact is also reflected in the variance R^2^ and R^2^ (Adjusted), where both values increased, indicating that the model now better explains the variance in satisfaction, highlighting the significance of subscription level in understanding customer satisfaction.
+
+
+# Plot the data
+
+## Without Conditioning on Subscription
+
+```{r}
+simps_not_cond  <- ggplot(df, aes(x = follow_ups, y = satisfaction)) +
+  geom_point(alpha = .8) +
+  stat_smooth(method = "lm", se = F)
+
+simps_not_cond
+```
+
+## Conditioning on Subscription
+
+```{r}
+simps_cond <- ggplot(df, aes(x = follow_ups, y = satisfaction, color = subscription )) +
+  geom_point(alpha = .8) +
+  stat_smooth(method = "lm", se = F) +
+  theme(legend.position = "right")
+
+simps_cond 
+```
