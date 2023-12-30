@@ -60,7 +60,7 @@
     "href": "content/01_journal/08_did.html",
     "title": "Difference-in-Differences",
     "section": "",
-    "text": "Note\n\n\n\nYou can delete everything in here and start fresh."
+    "text": "Loading the data frame\nlibrary(dplyr)\n\ndf_hospdd  &lt;- readRDS(\"Causal_Data_Science_Data/hospdd.rds\")\ndf_hospdd"
   },
   {
     "objectID": "content/01_journal/01_probability.html",
@@ -88,7 +88,7 @@
     "href": "content/01_journal/10_rdd.html",
     "title": "Regression Discontinuity",
     "section": "",
-    "text": "Note\n\n\n\nYou can delete everything in here and start fresh."
+    "text": "Loading the data frame\nlibrary(dplyr)\n\ndf_coupon &lt;- readRDS(\"Causal_Data_Science_Data/coupon.rds\")\n\ndf_coupon"
   },
   {
     "objectID": "content/01_journal/05_dag.html#regress-satisfaction-on-follow_ups",
@@ -222,5 +222,75 @@
     "title": "Instrumental Variables",
     "section": "",
     "text": "cor(df) %&gt;% round(2)\n\n#&gt;            rand_enc used_ftr time_spent\n#&gt; rand_enc       1.00     0.20       0.13\n#&gt; used_ftr       0.20     1.00       0.71\n#&gt; time_spent     0.13     0.71       1.00\n\n\n\nThere seems to be a strong naive estimate relationship between the pop feature usage and the app time, based on the calculations from above.\nAdditionally, there seems to be a positive relationship between the random encouragement and the pop feature, suggesting that the instrument (random encouragement) was relevant. Similarly, there seems to be a relationship as well between the random encouragement and the time spent, but it’s not as significant as the former correlation. This can also be validated, as the random encouragement should not have a significant impact on the time spent by the users on the application."
+  },
+  {
+    "objectID": "content/01_journal/10_rdd.html#ploting-regression-lines-by-running-the-analysis-with-half-the-bandwidth",
+    "href": "content/01_journal/10_rdd.html#ploting-regression-lines-by-running-the-analysis-with-half-the-bandwidth",
+    "title": "Regression Discontinuity",
+    "section": "Ploting regression lines by running the analysis with half the bandwidth",
+    "text": "Ploting regression lines by running the analysis with half the bandwidth\n\n# Define cut-off\nc0 &lt;- 60\n# Specify bandwidth\nbw &lt;- (c0 + c(-2.5, 2.5))\n\n# Subsets below and above threshold in specified bandwidth\ndf_bw_below &lt;- df_coupon %&gt;% filter(days_since_last &gt;= bw[1] & days_since_last &lt; c0)\ndf_bw_above &lt;- df_coupon %&gt;% filter(days_since_last &gt;= c0 & days_since_last &lt;= bw[2])\n\ndf_bw &lt;- bind_rows(df_bw_above, df_bw_below)\ndim(df_bw)\n\n#&gt; [1] 181   4\n\n\n\nLATE\n\n\nmodel_bw_below &lt;- lm(purchase_after ~ days_since_last, df_bw_below)\nmodel_bw_above &lt;- lm(purchase_after ~ days_since_last, df_bw_above)\n\ny0 &lt;- predict(model_bw_below, tibble(days_since_last = c0))\ny1 &lt;- predict(model_bw_above, tibble(days_since_last = c0))\n\nlate &lt;- y1 - y0\nsprintf(\"LATE: %.2f\", late)\n\n#&gt; [1] \"LATE: 7.36\"\n\n\n\nPloting\n\n\nlibrary(ggplot2)\n\n# Minimum and maximum for y-axis limits\nmin_y &lt;- min(df_bw$purchase_after)\nmax_y &lt;- max(df_bw$purchase_after)\n\n# Add lines for vertical distance and change limits of x-axis.\ndep_var_bw &lt;- \n  ggplot(df_bw, aes(x = days_since_last, y = purchase_after, color = coupon)) +\n  geom_vline(xintercept = c0, linewidth = 2) +\n  geom_point(alpha = 0.4, size = 1) +\n  geom_smooth(data = df_bw_below, method = \"lm\", se = F, linewidth = 2) +\n  geom_smooth(data = df_bw_above, method = \"lm\", se = F, linewidth = 2) +\n  geom_segment(aes(x = c0, xend = bw[2], y = y0, yend = y0),\n             linetype = \"dotted\") +\n  geom_segment(aes(x = bw[1], xend = c0, y = y1, yend = y1),\n               linetype = \"dotted\") +\n  annotate(\"text\", x = c0+2, y = mean(c(y1, y0)-2),\n           label = sprintf(\"Difference: %.2f\", (y1 - y0)),\n           fontface = 2) +\n  scale_y_continuous(limits = c(min_y, max_y)) + \n  scale_color_discrete(labels = c(\"No coupon\", \"Coupon\")) +\n  xlab(\"Days since last purchase\") +\n  ylab(\"Purchase after coupon assignment\") +\n  theme(legend.title = element_blank())\ndep_var_bw\n\n#&gt; `geom_smooth()` using formula = 'y ~ x'\n#&gt; `geom_smooth()` using formula = 'y ~ x'"
+  },
+  {
+    "objectID": "content/01_journal/10_rdd.html#ploting-regression-lines-by-running-the-analysis-with-double-the-bandwidth",
+    "href": "content/01_journal/10_rdd.html#ploting-regression-lines-by-running-the-analysis-with-double-the-bandwidth",
+    "title": "Regression Discontinuity",
+    "section": "Ploting regression lines by running the analysis with double the bandwidth",
+    "text": "Ploting regression lines by running the analysis with double the bandwidth\n\n# Specify bandwidth\nbw &lt;- (c0 + c(-10, 10))\n\n# Subsets below and above threshold in specified bandwidth\ndf_bw_below &lt;- df_coupon %&gt;% filter(days_since_last &gt;= bw[1] & days_since_last &lt; c0)\ndf_bw_above &lt;- df_coupon %&gt;% filter(days_since_last &gt;= c0 & days_since_last &lt;= bw[2])\n\ndf_bw &lt;- bind_rows(df_bw_above, df_bw_below)\ndim(df_bw)\n\n#&gt; [1] 629   4\n\n\n\nLATE\n\n\nmodel_bw_below &lt;- lm(purchase_after ~ days_since_last, df_bw_below)\nmodel_bw_above &lt;- lm(purchase_after ~ days_since_last, df_bw_above)\n\ny0 &lt;- predict(model_bw_below, tibble(days_since_last = c0))\ny1 &lt;- predict(model_bw_above, tibble(days_since_last = c0))\n\nlate &lt;- y1 - y0\nsprintf(\"LATE: %.2f\", late)\n\n#&gt; [1] \"LATE: 9.51\"\n\n\n\nPloting\n\n\n# Minimum and maximum for y-axis limits\nmin_y &lt;- min(df_bw$purchase_after)\nmax_y &lt;- max(df_bw$purchase_after)\n\n# Add lines for vertical distance and change limits of x-axis.\ndep_var_bw &lt;- \n  ggplot(df_bw, aes(x = days_since_last, y = purchase_after, color = coupon)) +\n  geom_vline(xintercept = c0, linewidth = 2) +\n  geom_point(alpha = 0.4, size = 1) +\n  geom_smooth(data = df_bw_below, method = \"lm\", se = F, linewidth = 2) +\n  geom_smooth(data = df_bw_above, method = \"lm\", se = F, linewidth = 2) +\n  geom_segment(aes(x = c0, xend = bw[2], y = y0, yend = y0),\n             linetype = \"dotted\") +\n  geom_segment(aes(x = bw[1], xend = c0, y = y1, yend = y1),\n               linetype = \"dotted\") +\n  annotate(\"text\", x = c0+2, y = mean(c(y1, y0)-2),\n           label = sprintf(\"Difference: %.2f\", (y1 - y0)),\n           fontface = 2) +\n  scale_y_continuous(limits = c(min_y, max_y)) + \n  scale_color_discrete(labels = c(\"No coupon\", \"Coupon\")) +\n  xlab(\"Days since last purchase\") +\n  ylab(\"Purchase after coupon assignment\") +\n  theme(legend.title = element_blank())\ndep_var_bw\n\n#&gt; `geom_smooth()` using formula = 'y ~ x'\n#&gt; `geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNote\n\n\n\nIf bandwidth = 2.5, then LATE = 7.36 If bandwidth = 5, then LATE = 7.99 If bandwidth = 10, then LATE = 9.51\n\n\n\nDoubling the bandwidth results in a higher LATE, while halving it leads to a slightly lower LATE. A broader bandwidth may capture a wider range of data, potentially introducing more variation. On the other hand, a smaller bandwidth may fail to capture sufficient treatment effects, resulting in a smaller estimate. The observed sensitivity to the chosen bandwidth suggests an influence on LATE values."
+  },
+  {
+    "objectID": "content/01_journal/10_rdd.html#task-1",
+    "href": "content/01_journal/10_rdd.html#task-1",
+    "title": "Regression Discontinuity",
+    "section": "# Task 1:",
+    "text": "# Task 1:"
+  },
+  {
+    "objectID": "content/01_journal/10_rdd.html#task-2",
+    "href": "content/01_journal/10_rdd.html#task-2",
+    "title": "Regression Discontinuity",
+    "section": "# Task 2:",
+    "text": "# Task 2:\n\nLoading the data frame\n\n\ndf_shipping  &lt;- readRDS(\"Causal_Data_Science_Data/shipping.rds\")\ndf_shipping\n\n\n\n  \n\n\n\n\nPlot\n\n\ndf_shipping &lt;- df_shipping %&gt;%\n  mutate(shipping_type = ifelse(purchase_amount &gt; 30, \"Zero-cost Shipping\", \"cost Shipping\"))\n\nggplot(df_shipping, aes(x = purchase_amount, y = shipping_type, color = shipping_type)) +\n  geom_vline(xintercept = 30, color = palette()[2], linetype = \"dashed\") +\n  geom_point(alpha = 0.2, position = position_jitter()) +\n  guides(scale = \"none\") +\n  scale_y_discrete(labels = c(\"Zero-cost Shipping\", \"cost Shipping\"))+\n  scale_color_discrete(labels = c(\"Zero-cost Shipping\", \"cost Shipping\")) +\n  xlab(\"Purchase Amount\") +\n  ylab(\"\") +\n  theme(legend.position = \"none\")\n\n\n\n\n\n\n\n\n\nThe argument is backed by the easy-to-see 30€ cut-off line and how purchases are spread on both sides. This matches the info given for Zero-cost Shipping on purchases over 30€. The dotted line at 30€ makes it clear where the cut-off is. The chart shows well how purchase_amount helps tell which purchases get Zero-cost Shipping and which ones have shipping costs."
+  },
+  {
+    "objectID": "content/01_journal/10_rdd.html#task---1",
+    "href": "content/01_journal/10_rdd.html#task---1",
+    "title": "Regression Discontinuity",
+    "section": "# Task - 1",
+    "text": "# Task - 1"
+  },
+  {
+    "objectID": "content/01_journal/10_rdd.html#task---2",
+    "href": "content/01_journal/10_rdd.html#task---2",
+    "title": "Regression Discontinuity",
+    "section": "# Task - 2",
+    "text": "# Task - 2\n\nLoading the data frame\n\n\ndf_shipping  &lt;- readRDS(\"Causal_Data_Science_Data/shipping.rds\")\ndf_shipping\n\n\n\n  \n\n\n\n\nPlot\n\n\ndf_shipping &lt;- df_shipping %&gt;%\n  mutate(shipping_type = ifelse(purchase_amount &gt; 30, \"Zero-cost Shipping\", \"cost Shipping\"))\n\nggplot(df_shipping, aes(x = purchase_amount, y = shipping_type, color = shipping_type)) +\n  geom_vline(xintercept = 30, color = palette()[2], linetype = \"dashed\") +\n  geom_point(alpha = 0.2, position = position_jitter()) +\n  guides(scale = \"none\") +\n  scale_y_discrete(labels = c(\"Zero-cost Shipping\", \"cost Shipping\"))+\n  scale_color_discrete(labels = c(\"Zero-cost Shipping\", \"cost Shipping\")) +\n  xlab(\"Purchase Amount\") +\n  ylab(\"\") +\n  theme(legend.position = \"none\")\n\n\n\n\n\n\n\n\n\nThe argument is backed by the easy-to-see 30€ cut-off line and how purchases are spread on both sides. This matches the info given for Zero-cost Shipping on purchases over 30€. The dotted line at 30€ makes it clear where the cut-off is. The chart shows well how purchase_amount helps tell which purchases get Zero-cost Shipping and which ones have shipping costs."
+  },
+  {
+    "objectID": "content/01_journal/08_did.html#month-hospital",
+    "href": "content/01_journal/08_did.html#month-hospital",
+    "title": "Difference-in-Differences",
+    "section": "month + hospital",
+    "text": "month + hospital\n\nmodel1&lt;- lm(satis ~ month + hospital, data = df_hospdd)\nmodel1\n\n#&gt; \n#&gt; Call:\n#&gt; lm(formula = satis ~ month + hospital, data = df_hospdd)\n#&gt; \n#&gt; Coefficients:\n#&gt; (Intercept)        month     hospital  \n#&gt;     3.75972      0.07207     -0.01760"
+  },
+  {
+    "objectID": "content/01_journal/08_did.html#as.factormonth-as.factorhospital",
+    "href": "content/01_journal/08_did.html#as.factormonth-as.factorhospital",
+    "title": "Difference-in-Differences",
+    "section": "as.factor(month) + as.factor(hospital)",
+    "text": "as.factor(month) + as.factor(hospital)\n\nmodel2 &lt;- lm(satis ~ as.factor(month) + as.factor(hospital), data = df_hospdd)\nmodel2\n\n#&gt; \n#&gt; Call:\n#&gt; lm(formula = satis ~ as.factor(month) + as.factor(hospital), \n#&gt;     data = df_hospdd)\n#&gt; \n#&gt; Coefficients:\n#&gt;           (Intercept)      as.factor(month)2      as.factor(month)3  \n#&gt;              3.419332              -0.009608               0.021969  \n#&gt;     as.factor(month)4      as.factor(month)5      as.factor(month)6  \n#&gt;              0.349354               0.343235               0.348800  \n#&gt;     as.factor(month)7   as.factor(hospital)2   as.factor(hospital)3  \n#&gt;              0.341444               0.408566               0.533625  \n#&gt;  as.factor(hospital)4   as.factor(hospital)5   as.factor(hospital)6  \n#&gt;              0.227510              -0.145353               0.447863  \n#&gt;  as.factor(hospital)7   as.factor(hospital)8   as.factor(hospital)9  \n#&gt;              1.404416               0.071876              -1.518515  \n#&gt; as.factor(hospital)10  as.factor(hospital)11  as.factor(hospital)12  \n#&gt;              1.682845               0.220965              -0.095303  \n#&gt; as.factor(hospital)13  as.factor(hospital)14  as.factor(hospital)15  \n#&gt;              0.495593               0.233043              -0.144494  \n#&gt; as.factor(hospital)16  as.factor(hospital)17  as.factor(hospital)18  \n#&gt;              1.414268               0.423543               0.153276  \n#&gt; as.factor(hospital)19  as.factor(hospital)20  as.factor(hospital)21  \n#&gt;             -1.169296              -0.376607               0.770343  \n#&gt; as.factor(hospital)22  as.factor(hospital)23  as.factor(hospital)24  \n#&gt;              0.375321               0.277726              -0.732120  \n#&gt; as.factor(hospital)25  as.factor(hospital)26  as.factor(hospital)27  \n#&gt;              0.222480              -0.209747              -0.822648  \n#&gt; as.factor(hospital)28  as.factor(hospital)29  as.factor(hospital)30  \n#&gt;              0.288001              -0.175443              -0.591916  \n#&gt; as.factor(hospital)31  as.factor(hospital)32  as.factor(hospital)33  \n#&gt;              0.088091              -0.747340              -0.877969  \n#&gt; as.factor(hospital)34  as.factor(hospital)35  as.factor(hospital)36  \n#&gt;             -0.424406              -0.069883               1.714149  \n#&gt; as.factor(hospital)37  as.factor(hospital)38  as.factor(hospital)39  \n#&gt;             -0.283590              -0.510800              -0.447491  \n#&gt; as.factor(hospital)40  as.factor(hospital)41  as.factor(hospital)42  \n#&gt;              0.697539              -0.573729               0.457143  \n#&gt; as.factor(hospital)43  as.factor(hospital)44  as.factor(hospital)45  \n#&gt;             -1.196426              -0.389582              -0.637743  \n#&gt; as.factor(hospital)46  \n#&gt;             -0.345502\n\n\n\nDifference:\n\n\nmonth + hospital treats them as continuous variables, while as.factor(month) + as.factor(hospital) treats them as categorical (factor) variables. The latter is more appropriate when dealing with factors like months and hospitals, where the order and magnitude might not have meaningful interpretations.\nFor fixed effects representing categorical variables like months and hospitals, it is generally recommended to use as.factor() to ensure that the model considers them as discrete categories rather than continuous variables. This approach is more suitable for capturing the fixed effects accurately in the context of the analysis."
+  },
+  {
+    "objectID": "content/01_journal/08_did.html#mean-satisfaction-for-treated-and-control-hospitals-before-and-after-the-treatment",
+    "href": "content/01_journal/08_did.html#mean-satisfaction-for-treated-and-control-hospitals-before-and-after-the-treatment",
+    "title": "Difference-in-Differences",
+    "section": "Mean satisfaction for treated and control hospitals before and after the treatment",
+    "text": "Mean satisfaction for treated and control hospitals before and after the treatment\n\n# Step 1: Subset the data for treatment and control hospitals\ntreated_hospitals &lt;- df_hospdd %&gt;% filter(procedure == 1)\ncontrol_hospitals &lt;- df_hospdd %&gt;% filter(procedure == 0)\n\n# Step 2: Compute mean satisfaction for treated hospitals before and after treatment\nmean_satis_before_treated &lt;- treated_hospitals %&gt;%\n  filter(month &lt; 4) %&gt;%\n  pull(satis) %&gt;%\n  mean(na.rm = TRUE)\nmean_satis_before_treated = 0\n\nmean_satis_after_treated &lt;- treated_hospitals %&gt;%\n  filter(month &gt;= 4) %&gt;%\n  pull(satis) %&gt;%\n  mean(na.rm = TRUE)\n\n# Step 3: Compute mean satisfaction for control hospitals before and after treatment\nmean_satis_before_control &lt;- control_hospitals %&gt;%\n  filter(month &lt; 4) %&gt;%\n  pull(satis) %&gt;%\n  mean(na.rm = TRUE)\n\nmean_satis_after_control &lt;- control_hospitals %&gt;%\n  filter(month &gt;= 4) %&gt;%\n  pull(satis) %&gt;%\n  mean(na.rm = TRUE)\n\n# Step 4: Print the results\ncat(\n  \"Mean Satisfaction -\", \"\\n\",\n  \"Before (Treated):\", mean_satis_before_treated, \"\\n\",\n  \"After (Treated):\", mean_satis_after_treated, \"\\n\",\n  \"Before (Control):\", mean_satis_before_control, \"\\n\",\n  \"After (Control):\", mean_satis_after_control, \"\\n\"\n)\n\n#&gt; Mean Satisfaction - \n#&gt;  Before (Treated): 0 \n#&gt;  After (Treated): 4.363351 \n#&gt;  Before (Control): 3.447765 \n#&gt;  After (Control): 3.38249"
+  },
+  {
+    "objectID": "content/01_journal/08_did.html#did",
+    "href": "content/01_journal/08_did.html#did",
+    "title": "Difference-in-Differences",
+    "section": "DiD",
+    "text": "DiD\n\ndiff_before_treatment = mean_satis_before_treated - mean_satis_before_control\ndiff_after_treatment = mean_satis_after_treated - mean_satis_after_control\n\ndid_estimate &lt;- diff_after_treatment - diff_before_treatment\ndid_estimate\n\n#&gt; [1] 4.428627"
   }
 ]
