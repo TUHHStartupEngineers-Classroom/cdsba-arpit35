@@ -2,6 +2,90 @@
 title: "Difference-in-Differences"
 ---
 
-::: callout-note
-You can delete everything in here and start fresh.
-:::
+> Loading the data frame
+
+```{r}
+#| warning: false
+library(dplyr)
+
+df_hospdd  <- readRDS("Causal_Data_Science_Data/hospdd.rds")
+df_hospdd
+```
+
+# Task - 1
+
+------------------------------------------------------------------------
+
+## Mean satisfaction for treated and control hospitals before and after the treatment
+
+```{r}
+# Step 1: Subset the data for treatment and control hospitals
+treated_hospitals <- df_hospdd %>% filter(procedure == 1)
+control_hospitals <- df_hospdd %>% filter(procedure == 0)
+
+# Step 2: Compute mean satisfaction for treated hospitals before and after treatment
+mean_satis_before_treated <- treated_hospitals %>%
+  filter(month < 4) %>%
+  pull(satis) %>%
+  mean(na.rm = TRUE)
+mean_satis_before_treated = 0
+
+mean_satis_after_treated <- treated_hospitals %>%
+  filter(month >= 4) %>%
+  pull(satis) %>%
+  mean(na.rm = TRUE)
+
+# Step 3: Compute mean satisfaction for control hospitals before and after treatment
+mean_satis_before_control <- control_hospitals %>%
+  filter(month < 4) %>%
+  pull(satis) %>%
+  mean(na.rm = TRUE)
+
+mean_satis_after_control <- control_hospitals %>%
+  filter(month >= 4) %>%
+  pull(satis) %>%
+  mean(na.rm = TRUE)
+
+# Step 4: Print the results
+cat(
+  "Mean Satisfaction -", "\n",
+  "Before (Treated):", mean_satis_before_treated, "\n",
+  "After (Treated):", mean_satis_after_treated, "\n",
+  "Before (Control):", mean_satis_before_control, "\n",
+  "After (Control):", mean_satis_after_control, "\n"
+)
+```
+
+## DiD
+
+```{r}
+diff_before_treatment = mean_satis_before_treated - mean_satis_before_control
+diff_after_treatment = mean_satis_after_treated - mean_satis_after_control
+
+did_estimate <- diff_after_treatment - diff_before_treatment
+did_estimate
+```
+
+# Task - 2
+
+------------------------------------------------------------------------
+
+## month + hospital
+
+```{r}
+model1<- lm(satis ~ month + hospital, data = df_hospdd)
+model1
+```
+
+## as.factor(month) + as.factor(hospital)
+
+```{r}
+model2 <- lm(satis ~ as.factor(month) + as.factor(hospital), data = df_hospdd)
+model2
+```
+
+> Difference:
+
+* `month + hospital` treats them as continuous variables, while `as.factor(month) + as.factor(hospital)` treats them as categorical (factor) variables. The latter is more appropriate when dealing with factors like months and hospitals, where the order and magnitude might not have meaningful interpretations.
+
+* For fixed effects representing categorical variables like months and hospitals, it is generally recommended to use `as.factor()` to ensure that the model considers them as discrete categories rather than continuous variables. This approach is more suitable for capturing the fixed effects accurately in the context of the analysis.
